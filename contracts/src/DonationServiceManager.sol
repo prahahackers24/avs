@@ -63,7 +63,9 @@ contract DonationServiceManager is
     // NOTE: this function creates new task, assigns it a taskId
     function createNewTask(
         address[] memory tokenAddresses,
-        uint256[] memory tokenAmounts
+        uint256[] memory tokenAmounts,
+        address outputTokenAddress,
+        uint256 outputTokenAmount
     ) external {
         // Do some logical checks
         require(

@@ -18,7 +18,9 @@ interface IDonationServiceManager {
     // NOTE: this function creates new task.
     function createNewTask(
         address[] memory tokenAddresses,
-        uint256[] memory tokenAmounts
+        uint256[] memory tokenAmounts,
+        address outputTokenAddress,
+        uint256 outputTokenAmount
     ) external;
 
     // NOTE: this function is called by operators to respond to a task.
