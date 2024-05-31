@@ -46,10 +46,10 @@ send-fund: ## sends fund to the operator saved in tests/keys/test.ecdsa.key.json
 # TODO: piping to zap-pretty only works when zapper environment is set to production, unsure why
 ____OFFCHAIN_SOFTWARE___: ## 
 start-operator: 
-	tsc && node dist/index.js
+	node dist/index.js
 
 spam-tasks:
-	tsc && node dist/createNewTasks.js
+	node dist/createNewTasks.js
 
 -----------------------------: ## 
 _____HELPER_____: ## 

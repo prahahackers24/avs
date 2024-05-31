@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: UNLICENSED
 pragma solidity ^0.8.9;
 
-interface IHelloWorldServiceManager {
+interface IDonationServiceManager {
     // EVENTS
     event NewTaskCreated(uint32 indexed taskIndex, Task task);
 
@@ -9,14 +9,16 @@ interface IHelloWorldServiceManager {
 
     // STRUCTS
     struct Task {
-        string name;
+        address[] tokenAddresses;
+        uint256[] tokenAmounts;
         uint32 taskCreatedBlock;
     }
 
     // FUNCTIONS
     // NOTE: this function creates new task.
     function createNewTask(
-        string memory name
+        address[] memory tokenAddresses,
+        uint256[] memory tokenAmounts
     ) external;
 
     // NOTE: this function is called by operators to respond to a task.

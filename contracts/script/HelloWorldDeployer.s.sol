@@ -10,12 +10,11 @@ import {IStrategyManager, IStrategy} from "@eigenlayer/contracts/interfaces/IStr
 import {ISlasher} from "@eigenlayer/contracts/interfaces/ISlasher.sol";
 import {StrategyBaseTVLLimits} from "@eigenlayer/contracts/strategies/StrategyBaseTVLLimits.sol";
 import "@eigenlayer/test/mocks/EmptyContract.sol";
-
 import {ECDSAStakeRegistry} from "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import {Quorum, StrategyParams} from "@eigenlayer-middleware/src/interfaces/IECDSAStakeRegistryEventsAndErrors.sol";
 import "@eigenlayer-middleware/src/OperatorStateRetriever.sol";
 
-import {HelloWorldServiceManager, IServiceManager} from "../src/HelloWorldServiceManager.sol";
+import {DonationServiceManager, IServiceManager} from "../src/DonationServiceManager.sol";
 import "../src/ERC20Mock.sol";
 
 import {Utils} from "./utils/Utils.sol";
@@ -26,22 +25,22 @@ import "forge-std/StdJson.sol";
 import "forge-std/console.sol";
 
 // # To deploy and verify our contract
-// forge script script/HelloWorldDeployer.s.sol:HelloWorldDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
-contract HelloWorldDeployer is Script, Utils {
+// forge script script/DonationDeployer.s.sol:DonationDeployer --rpc-url $RPC_URL  --private-key $PRIVATE_KEY --broadcast -vvvv
+contract DonationDeployer is Script, Utils {
     // ERC20 and Strategy: we need to deploy this erc20, create a strategy for it, and whitelist this strategy in the strategymanager
 
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
     // Hello World contracts
-    ProxyAdmin public helloWorldProxyAdmin;
-    PauserRegistry public helloWorldPauserReg;
-    
+    ProxyAdmin public donationProxyAdmin;
+    PauserRegistry public donationPauserReg;
+
     ECDSAStakeRegistry public stakeRegistryProxy;
     ECDSAStakeRegistry public stakeRegistryImplementation;
 
-    HelloWorldServiceManager public helloWorldServiceManagerProxy;
-    HelloWorldServiceManager public helloWorldServiceManagerImplementation;
+    DonationServiceManager public donationServiceManagerProxy;
+    DonationServiceManager public donationServiceManagerImplementation;
 
     function run() external {
         // Eigenlayer contracts
@@ -85,8 +84,8 @@ contract HelloWorldDeployer is Script, Utils {
                 )
             );
 
-        address helloWorldCommunityMultisig = msg.sender;
-        address helloWorldPauser = msg.sender;
+        address donationCommunityMultisig = msg.sender;
+        address donationPauser = msg.sender;
 
         vm.startBroadcast();
         _deployErc20AndStrategyAndWhitelistStrategy(
@@ -95,12 +94,12 @@ contract HelloWorldDeployer is Script, Utils {
             baseStrategyImplementation,
             strategyManager
         );
-        _deployHelloWorldContracts(
+        _deployDonationContracts(
             delegationManager,
             avsDirectory,
             erc20MockStrategy,
-            helloWorldCommunityMultisig,
-            helloWorldPauser
+            donationCommunityMultisig,
+            donationPauser
         );
         vm.stopBroadcast();
     }
@@ -139,12 +138,12 @@ contract HelloWorldDeployer is Script, Utils {
         );
     }
 
-    function _deployHelloWorldContracts(
+    function _deployDonationContracts(
         IDelegationManager delegationManager,
         IAVSDirectory avsDirectory,
         IStrategy strat,
-        address helloWorldCommunityMultisig,
-        address helloWorldPauser
+        address donationCommunityMultisig,
+        address donationPauser
     ) internal {
         // Adding this as a temporary fix to make the rest of the script work with a single strategy
         // since it was originally written to work with an array of strategies
@@ -152,16 +151,16 @@ contract HelloWorldDeployer is Script, Utils {
         uint numStrategies = deployedStrategyArray.length;
 
         // deploy proxy admin for ability to upgrade proxy contracts
-        helloWorldProxyAdmin = new ProxyAdmin();
+        donationProxyAdmin = new ProxyAdmin();
 
         // deploy pauser registry
         {
             address[] memory pausers = new address[](2);
-            pausers[0] = helloWorldPauser;
-            pausers[1] = helloWorldCommunityMultisig;
-            helloWorldPauserReg = new PauserRegistry(
+            pausers[0] = donationPauser;
+            pausers[1] = donationCommunityMultisig;
+            donationPauserReg = new PauserRegistry(
                 pausers,
-                helloWorldCommunityMultisig
+                donationCommunityMultisig
             );
         }
 
@@ -173,11 +172,11 @@ contract HelloWorldDeployer is Script, Utils {
          * First, deploy upgradeable proxy contracts that **will point** to the implementations. Since the implementation contracts are
          * not yet deployed, we give these proxies an empty contract as the initial implementation, to act as if they have no code.
          */
-        helloWorldServiceManagerProxy = HelloWorldServiceManager(
+        donationServiceManagerProxy = DonationServiceManager(
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(helloWorldProxyAdmin),
+                    address(donationProxyAdmin),
                     ""
                 )
             )
@@ -186,7 +185,7 @@ contract HelloWorldDeployer is Script, Utils {
             address(
                 new TransparentUpgradeableProxy(
                     address(emptyContract),
-                    address(helloWorldProxyAdmin),
+                    address(donationProxyAdmin),
                     ""
                 )
             )
@@ -198,54 +197,54 @@ contract HelloWorldDeployer is Script, Utils {
                 delegationManager
             );
 
-            helloWorldProxyAdmin.upgrade(
-                TransparentUpgradeableProxy(payable(address(stakeRegistryProxy))),
+            donationProxyAdmin.upgrade(
+                TransparentUpgradeableProxy(
+                    payable(address(stakeRegistryProxy))
+                ),
                 address(stakeRegistryImplementation)
             );
         }
 
-        {   
+        {
             StrategyParams[]
                 memory quorumsStrategyParams = new StrategyParams[](
                     numStrategies
-            );
-            
+                );
+
             for (uint j = 0; j < numStrategies; j++) {
                 quorumsStrategyParams[j] = StrategyParams({
-                        strategy: deployedStrategyArray[j],
-                        multiplier: 10_000
-                    });
+                    strategy: deployedStrategyArray[j],
+                    multiplier: 10_000
+                });
             }
-        
-            Quorum memory quorum = Quorum(
-                quorumsStrategyParams
-            );
 
-            helloWorldProxyAdmin.upgradeAndCall(
+            Quorum memory quorum = Quorum(quorumsStrategyParams);
+
+            donationProxyAdmin.upgradeAndCall(
                 TransparentUpgradeableProxy(
                     payable(address(stakeRegistryProxy))
                 ),
                 address(stakeRegistryImplementation),
                 abi.encodeWithSelector(
                     ECDSAStakeRegistry.initialize.selector,
-                    address(helloWorldServiceManagerImplementation),
+                    address(donationServiceManagerImplementation),
                     1,
                     quorum
                 )
             );
         }
 
-        helloWorldServiceManagerImplementation = new HelloWorldServiceManager(
+        donationServiceManagerImplementation = new DonationServiceManager(
             address(avsDirectory),
             address(stakeRegistryProxy),
             address(delegationManager)
         );
         // Third, upgrade the proxy contracts to use the correct implementation contracts and initialize them.
-        helloWorldProxyAdmin.upgrade(
+        donationProxyAdmin.upgrade(
             TransparentUpgradeableProxy(
-                payable(address(helloWorldServiceManagerProxy))
+                payable(address(donationServiceManagerProxy))
             ),
-            address(helloWorldServiceManagerImplementation)
+            address(donationServiceManagerImplementation)
         );
 
         // WRITE JSON DATA
@@ -264,20 +263,20 @@ contract HelloWorldDeployer is Script, Utils {
         );
         vm.serializeAddress(
             deployed_addresses,
-            "HelloWorldServiceManagerProxy",
-            address(helloWorldServiceManagerProxy)
+            "DonationServiceManagerProxy",
+            address(donationServiceManagerProxy)
         );
         vm.serializeAddress(
             deployed_addresses,
-            "HelloWorldServiceManagerImplementation",
-            address(helloWorldServiceManagerImplementation)
+            "DonationServiceManagerImplementation",
+            address(donationServiceManagerImplementation)
         );
         vm.serializeAddress(
             deployed_addresses,
             "ECDSAStakeRegistry",
             address(stakeRegistryProxy)
         );
-        
+
         string memory deployed_addresses_output = vm.serializeAddress(
             deployed_addresses,
             "ECDSAStakeRegistryImplementation",

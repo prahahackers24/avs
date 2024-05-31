@@ -9,15 +9,17 @@ It will give you a concrete understanding of the basic components.
 ![hello-world-png](./assets/hello-world-diagram.png)
 
 There are 5 steps to this AVS:
+
 - AVS consumer requests a "Hello World" message to be generated and signed
 - AVS takes on the request by emitting an event for operators to pick up the request
 - any operator who is staked to serve this AVS takes this request, generates this message and signs it
 - the operator submits this message with their signature back to the AVS
-- *if the operator is in fact registered to the AVS and has the minimum needed stake, the submission is accepted*
+- _if the operator is in fact registered to the AVS and has the minimum needed stake, the submission is accepted_
 
 That's it. This simple flow highlights some of the core mechanics of how AVSs work.
 
 Where additional sophistication with AVSs come into the picture:
+
 - the nature of the request is more sophisicated than generating a constant string
 - the operators might need to coordinate with each other
 - the type of signature is different based on the constraints of the service
@@ -26,7 +28,7 @@ Where additional sophistication with AVSs come into the picture:
 
 ## Quick Start
 
-### Dependencies 
+### Dependencies
 
 1. [npm](https://docs.npmjs.com/downloading-and-installing-node-js-and-npm)
 2. [Foundry](https://getfoundry.sh/)
@@ -34,16 +36,19 @@ Where additional sophistication with AVSs come into the picture:
 
 ### Steps
 
+0. run `npm install`
 1. Make sure Docker is running
 2. Run `make start-chain-with-contracts-deployed`
 
-    2.1 This will build the contracts, start an Anvil chain, deploy the contracts to it, and leaves the chain running in the current terminal
-3. Open new terminal tab and run `make start-operator`
+   2.1 This will build the contracts, start an Anvil chain, deploy the contracts to it, and leaves the chain running in the current terminal
 
-    3.1 This will compile the AVS software and start monitering new tasks
-4. Open new terminal tab and run `make spam-tasks` (Optional) 
+3. Open new terminal tab and run `node dist/index.js`
 
-    4.1 This will spam the AVS with random names every 15 seconds
+   3.1 This will compile the AVS software and start monitering new tasks
+
+4. Open new terminal tab and run `node dist/createNewTasks.js` (Optional)
+
+   4.1 This will spam the AVS with random names every 15 seconds
 
 ## Extensions
 

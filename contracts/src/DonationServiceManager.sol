@@ -8,15 +8,15 @@ import "@eigenlayer-middleware/src/unaudited/ECDSAStakeRegistry.sol";
 import "@openzeppelin-upgrades/contracts/utils/cryptography/ECDSAUpgradeable.sol";
 import "@eigenlayer/contracts/permissions/Pausable.sol";
 import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegistryCoordinator.sol";
-import "./IHelloWorldServiceManager.sol";
+import "./IDonationServiceManager.sol";
 
 /**
  * @title Primary entrypoint for procuring services from HelloWorld.
  * @author Eigen Labs, Inc.
  */
-contract HelloWorldServiceManager is 
+contract DonationServiceManager is
     ECDSAServiceManagerBase,
-    IHelloWorldServiceManager,
+    IDonationServiceManager,
     Pausable
 {
     using BytesLib for bytes;
@@ -38,9 +38,8 @@ contract HelloWorldServiceManager is
     /* MODIFIERS */
     modifier onlyOperator() {
         require(
-            ECDSAStakeRegistry(stakeRegistry).operatorRegistered(msg.sender) 
-            == 
-            true, 
+            ECDSAStakeRegistry(stakeRegistry).operatorRegistered(msg.sender) ==
+                true,
             "Operator must be the caller"
         );
         _;
@@ -54,20 +53,22 @@ contract HelloWorldServiceManager is
         ECDSAServiceManagerBase(
             _avsDirectory,
             _stakeRegistry,
+            // TODO: maybe needed for our usecase?
             address(0), // hello-world doesn't need to deal with payments
             _delegationManager
         )
     {}
 
-
     /* FUNCTIONS */
     // NOTE: this function creates new task, assigns it a taskId
     function createNewTask(
-        string memory name
+        address[] memory tokenAddresses,
+        uint256[] memory tokenAmounts
     ) external {
         // create a new task struct
         Task memory newTask;
-        newTask.name = name;
+        newTask.tokenAddresses = tokenAddresses;
+        newTask.tokenAmounts = tokenAmounts;
         newTask.taskCreatedBlock = uint32(block.number);
 
         // store hash of task onchain, emit event, and increase taskNum
@@ -88,8 +89,7 @@ contract HelloWorldServiceManager is
         );
         // check that the task is valid, hasn't been responsed yet, and is being responded in time
         require(
-            keccak256(abi.encode(task)) ==
-                allTaskHashes[referenceTaskIndex],
+            keccak256(abi.encode(task)) == allTaskHashes[referenceTaskIndex],
             "supplied task does not match the one recorded in the contract"
         );
         // some logical checks
@@ -98,8 +98,9 @@ contract HelloWorldServiceManager is
             "Operator has already responded to the task"
         );
 
+        // TODO Replace hello world logic by token logic
         // The message that was signed
-        bytes32 messageHash = keccak256(abi.encodePacked("Hello, ", task.name));
+        bytes32 messageHash = keccak256(abi.encodePacked("Hello, World!"));
         bytes32 ethSignedMessageHash = messageHash.toEthSignedMessageHash();
 
         // Recover the signer address from the signature
@@ -116,7 +117,11 @@ contract HelloWorldServiceManager is
 
     // HELPER
 
-    function operatorHasMinimumWeight(address operator) public view returns (bool) {
-        return ECDSAStakeRegistry(stakeRegistry).getOperatorWeight(operator) >= ECDSAStakeRegistry(stakeRegistry).minimumWeight();
+    function operatorHasMinimumWeight(
+        address operator
+    ) public view returns (bool) {
+        return
+            ECDSAStakeRegistry(stakeRegistry).getOperatorWeight(operator) >=
+            ECDSAStakeRegistry(stakeRegistry).minimumWeight();
     }
 }
