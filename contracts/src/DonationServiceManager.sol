@@ -11,8 +11,8 @@ import {IRegistryCoordinator} from "@eigenlayer-middleware/src/interfaces/IRegis
 import "./IDonationServiceManager.sol";
 
 /**
- * @title Primary entrypoint for procuring services from HelloWorld.
- * @author Eigen Labs, Inc.
+ * @title Primary entrypoint for procuring services from Donation.
+ * @author arjanjohan <https://github.com/arjanjohan>.
  */
 contract DonationServiceManager is
     ECDSAServiceManagerBase,
@@ -65,6 +65,11 @@ contract DonationServiceManager is
         address[] memory tokenAddresses,
         uint256[] memory tokenAmounts
     ) external {
+        // Do some logical checks
+        require(
+            tokenAddresses.length == tokenAmounts.length,
+            "Array length mismatch"
+        );
         // create a new task struct
         Task memory newTask;
         newTask.tokenAddresses = tokenAddresses;

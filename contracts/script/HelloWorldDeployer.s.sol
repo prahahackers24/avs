@@ -32,7 +32,7 @@ contract DonationDeployer is Script, Utils {
     ERC20Mock public erc20Mock;
     StrategyBaseTVLLimits public erc20MockStrategy;
 
-    // Hello World contracts
+    // Donation contracts
     ProxyAdmin public donationProxyAdmin;
     PauserRegistry public donationPauserReg;
 
@@ -290,6 +290,6 @@ contract DonationDeployer is Script, Utils {
             deployed_addresses_output
         );
 
-        writeOutput(finalJson, "hello_world_avs_deployment_output");
+        writeOutput(finalJson, "donation_avs_deployment_output");
     }
 }
